@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>시재 보고</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#B5895A">
+<style>
+  html{
+    /* 작은 폰(약 320px)~큰 폰/태블릿까지 전체 글씨 크기가 화면폭에 맞춰 유동적으로 조절됨 */
+    font-size: clamp(14px, 3.6vw + 4px, 19px);
+  }
+  :root{
+    --ivory:#FAF7F0;
+    --white:#FFFFFF;
+    --gold:#B5895A;
+    --gold-dark:#8C6538;
+    --brown:#4A3728;
+    --brown-soft:#7A6455;
+    --line:#E7DFD2;
+    --green:#2E7D4F;
+    --red:#C0392B;
+    --shadow: 0 2px 10px rgba(74,55,40,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    background:var(--ivory);
+    color:var(--brown);
+    padding-bottom:110px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    background:var(--white);
+    padding:18px 20px 14px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header h1{ font-size:1.5rem; margin:0; color:var(--brown); letter-spacing:-0.3px;}
+  header .date{ font-size:0.9375rem; color:var(--brown-soft); margin-top:2px;}
+  .admin-btn{
+    background:none;border:none;color:var(--brown-soft);
+    font-size:1.625rem; padding:8px; cursor:pointer;
+  }
+  main{ padding:16px 16px 8px; max-width:520px; margin:0 auto;}
+  .card{
+    background:var(--white);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:var(--shadow);
+  }
+  .card h2{
+    font-size:1.0625rem; margin:0 0 12px; color:var(--gold-dark);
+    font-weight:700; display:flex; align-items:center; gap:6px;
+  }
+  label{ display:block; font-size:0.9688rem; color:var(--brown-soft); margin-bottom:6px; font-weight:600;}
+  select, input[type=number]{
+    width:100%;
+    padding:14px 12px;
+    font-size:1.25rem;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    background:var(--white);
+    color:var(--brown);
+    font-weight:600;
+  }
+  select:focus, input:focus{ outline:none; border-color:var(--gold);}
+  .btn-loadprev{
+    width:100%; margin-top:8px; padding:11px 0;
+    background:var(--ivory); border:1.5px solid var(--gold); color:var(--gold-dark);
+    border-radius:10px; font-weight:800; font-size:0.9375rem; cursor:pointer;
+  }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .field{ margin-bottom:12px;}
+  .field:last-child{ margin-bottom:0;}
+  table{ width:100%; border-collapse:collapse; font-size:1rem;}
+  th{
+    text-align:center; padding:8px 2px; color:var(--brown-soft);
+    font-size:0.875rem; border-bottom:1.5px solid var(--line); font-weight:700;
+  }
+  td{ padding:6px 2px; text-align:center; border-bottom:1px solid var(--line);}
+  td.denom{ text-align:left; font-weight:700; color:var(--brown); font-size:1.0625rem; white-space:nowrap;}
+  td input{
+    width:100%; padding:12px 2px; font-size:1.1875rem; text-align:center;
+    border:1.3px solid var(--line); border-radius:8px; font-weight:600;
+  }
+  .col-morning input{ background:#FBF6EC;}
+  .col-in input{ background:#EFF7F1;}
+  .col-out input{ background:#FBEFEE;}
+  .summary-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .summary-item{
+    background:var(--ivory); border-radius:12px; padding:12px; text-align:center;
+  }
+  .summary-item .lbl{ font-size:0.875rem; color:var(--brown-soft); font-weight:700; margin-bottom:4px;}
+  .summary-item .val{ font-size:1.375rem; font-weight:800; color:var(--brown);}
+  .summary-item.total{ grid-column:1 / -1; background:linear-gradient(135deg,var(--gold),var(--gold-dark)); }
+  .summary-item.total .lbl{ color:#FBF0DE;}
+  .summary-item.total .val{ color:#fff; font-size:1.6875rem;}
+  .match-box{
+    margin-top:12px; padding:12px; border-radius:12px; text-align:center; font-weight:800; font-size:1.0625rem;
+  }
+  .match-ok{ background:#E9F6EE; color:var(--green);}
+  .match-bad{ background:#FBEAE8; color:var(--red);}
+  .bottom-bar{
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--white); border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    display:flex; gap:10px; z-index:30;
+  }
+  .btn{
+    flex:1; padding:16px; border:none; border-radius:14px;
+    font-size:1.1875rem; font-weight:800; cursor:pointer;
+  }
+  .btn-primary{ background:var(--gold); color:#fff;}
+  .btn-secondary{ background:var(--ivory); color:var(--brown); border:1.5px solid var(--line);}
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(74,55,40,0.45);
+    display:none; align-items:flex-end; justify-content:center; z-index:100;
+  }
+  .modal-overlay.show{ display:flex;}
+  .modal{
+    background:var(--white); width:100%; max-width:520px;
+    border-radius:22px 22px 0 0; padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+    max-height:88vh; overflow-y:auto;
+  }
+  .modal h3{ margin:0 0 14px; font-size:1.3125rem; color:var(--brown);}
+  .preview-text{
+    background:var(--ivory); border-radius:12px; padding:14px;
+    font-size:1.0625rem; line-height:1.8; white-space:pre-wrap; color:var(--brown);
+    margin-bottom:14px; font-weight:500;
+  }
+  .modal-btns{ display:flex; gap:10px;}
+  .record-item{
+    background:var(--ivory); border-radius:12px; padding:12px 14px; margin-bottom:8px;
+    display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+  }
+  .record-item .r-store{ font-weight:800; font-size:1.0625rem;}
+  .record-item .r-date{ font-size:0.875rem; color:var(--brown-soft); margin-top:2px;}
+  .record-item .r-arrow{ color:var(--gold-dark); font-size:1.375rem;}
+  .empty-note{ text-align:center; color:var(--brown-soft); font-size:1.0625rem; padding:30px 0;}
+  .keypad{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0;}
+  .keypad button{
+    padding:18px 0; font-size:1.5rem; font-weight:800; border-radius:12px;
+    border:1.5px solid var(--line); background:var(--ivory); color:var(--brown);
+  }
+  .keypad button.wide{ grid-column:span 1;}
+  .pin-status{ text-align:center; font-size:1rem; color:var(--brown-soft); min-height:18px; margin-bottom:4px;}
+  .close-x{ float:right; background:none; border:none; font-size:1.5rem; color:var(--brown-soft);}
+  .toast{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    background:var(--brown); color:#fff; padding:10px 18px; border-radius:30px;
+    font-size:1rem; font-weight:700; z-index:200; display:none;
+  }
+
+  /* 초소형 화면(약 340px 이하) — 여백/간격을 살짝 줄여 답답하지 않게 */
+  @media (max-width: 340px){
+    main{ padding:12px 10px 8px;}
+    .card{ padding:12px;}
+    td{ padding:5px 1px;}
+    td input{ padding:8px 1px;}
+    .keypad{ gap:8px;}
+  }
+
+  /* 태블릿/큰 화면(600px 이상) — 콘텐츠 폭을 넓히고 여백을 넉넉하게 */
+  @media (min-width: 600px){
+    main{ max-width:640px; padding:24px 24px 8px;}
+    .card{ padding:22px;}
+    .bottom-bar{ max-width:640px; left:50%; transform:translateX(-50%); border-radius:18px 18px 0 0;}
+    .modal{ max-width:640px; border-radius:22px;}
+    .modal-overlay{ align-items:center;}
+  }
+
+  /* 가로모드(폭이 넓고 높이가 낮은 경우) — 하단바에 가려지지 않도록 여백만 보정 */
+  @media (orientation: landscape) and (max-height: 480px){
+    body{ padding-bottom:90px;}
+    .bottom-bar{ padding:8px 16px calc(8px + env(safe-area-inset-bottom));}
+    .modal{ max-height:80vh;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>시재 보고</h1>
+    <div class="date" id="todayLabel"></div>
+  </div>
+  <button class="admin-btn" onclick="openAdminGate()">🔒</button>
+</header>
+
+<main>
+  <div class="card">
+    <h2>매장 정보</h2>
+    <div class="field">
+      <label>매장 선택</label>
+      <select id="store" onchange="onStoreChange()">
+        <option value="">매장을 선택하세요</option>
+        <option>종로</option>
+        <option>여의도</option>
+        <option>구로</option>
+        <option>영등포</option>
+        <option>가산</option>
+      </select>
+      <button type="button" class="btn-loadprev" onclick="loadPreviousData()">↺ 전 데이터 불러오기</button>
+      <div id="autoFillNote" style="font-size:0.8438rem; color:var(--gold-dark); margin-top:6px; display:none;">전날 마감 수량을 아침 시재에 자동으로 불러왔습니다</div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>전날 출금 총액</label>
+        <input type="number" id="prevOut" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="field">
+        <label>당일 총입금액</label>
+        <input type="number" id="todayInTotal" inputmode="numeric" placeholder="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>권종별 입력</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align:left;">권종</th>
+          <th class="col-morning">아침 시재</th>
+          <th class="col-in">당일 입금</th>
+          <th class="col-out">당일 지출</th>
+        </tr>
+      </thead>
+      <tbody id="denomBody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>자동 계산 요약</h2>
+    <div class="summary-grid">
+      <div class="summary-item"><div class="lbl">아침 시재 총액</div><div class="val" id="sumMorning">0</div></div>
+      <div class="summary-item"><div class="lbl">당일 입금 총액</div><div class="val" id="sumIn">0</div></div>
+      <div class="summary-item"><div class="lbl">당일 지출 총액</div><div class="val" id="sumOut">0</div></div>
+      <div class="summary-item"><div class="lbl">현재 현금 총액</div><div class="val" id="sumCash">0</div></div>
+      <div class="summary-item total"><div class="lbl">현재 현금 총액 (합계)</div><div class="val" id="sumCashBig">0원</div></div>
+    </div>
+    <div class="match-box" id="matchBox">매장과 금액을 입력하면 비교 결과가 표시됩니다</div>
+  </div>
+</main>
+
+<div class="bottom-bar">
+  <button class="btn btn-secondary" onclick="openRecords()">최근 기록</button>
+  <button class="btn btn-primary" onclick="openPreview()">미리보기 · 공유</button>
+</div>
+
+<!-- 미리보기 모달 -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('previewModal')">✕</button>
+    <h3>미리보기</h3>
+    <div class="preview-text" id="previewText"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('previewModal')">닫기</button>
+      <button class="btn btn-primary" onclick="shareReport()">공유하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 최근 기록 모달 -->
+<div class="modal-overlay" id="recordsModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('recordsModal')">✕</button>
+    <h3>최근 기록 (최근 3일)</h3>
+    <div id="recordsList"></div>
+  </div>
+</div>
+
+<!-- 기록 상세 모달 -->
+<div class="modal-overlay" id="recordDetailModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('recordDetailModal')">✕</button>
+    <h3 id="recordDetailTitle">기록 상세</h3>
+    <div class="preview-text" id="recordDetailText"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('recordDetailModal')">닫기</button>
+      <button class="btn btn-primary" onclick="reshareRecord()">공유하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 관리자 PIN 모달 -->
+<div class="modal-overlay" id="adminGateModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('adminGateModal')">✕</button>
+    <h3>관리자 접근</h3>
+    <div class="pin-status" id="pinStatus">비밀번호를 입력하세요</div>
+    <div class="keypad" id="pinKeypad"></div>
+  </div>
+</div>
+
+<!-- 관리자 화면 모달 -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('adminModal')">✕</button>
+    <h3>관리자 화면</h3>
+    <div id="adminRecordsList"></div>
+    <div class="modal-btns" style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="clearAllRecords()">전체 기록 삭제</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DENOMS = [
+  {label:'5만원', value:50000},
+  {label:'1만원', value:10000},
+  {label:'5천원', value:5000},
+  {label:'1천원', value:1000},
+  {label:'500원', value:500},
+  {label:'100원', value:100},
+];
+const STORAGE_KEY = 'sijae_records_v1';
+const LAST_COUNTS_PREFIX = 'sijae_last_counts_';
+const ADMIN_PIN = '34';
+let pinBuffer = '';
+let currentRecordForShare = null;
+
+function fmt(n){ return (Math.round(n)||0).toLocaleString('ko-KR'); }
+
+function todayLabel(){
+  const d = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} (${days[d.getDay()]})`;
+}
+
+function buildDenomTable(){
+  const body = document.getElementById('denomBody');
+  body.innerHTML = DENOMS.map((d,i)=>`
+    <tr>
+      <td class="denom">${d.label}</td>
+      <td class="col-morning"><input type="number" inputmode="numeric" min="0" data-i="${i}" data-type="morning" oninput="calc()" placeholder="0"></td>
+      <td class="col-in"><input type="number" inputmode="numeric" min="0" data-i="${i}" data-type="in" oninput="calc()" placeholder="0"></td>
+      <td class="col-out"><input type="number" inputmode="numeric" min="0" data-i="${i}" data-type="out" oninput="calc()" placeholder="0"></td>
+    </tr>
+  `).join('');
+}
+
+function getQty(i, type){
+  const el = document.querySelector(`input[data-i="${i}"][data-type="${type}"]`);
+  return el && el.value ? parseFloat(el.value) : 0;
+}
+
+function setQty(i, type, qty){
+  const el = document.querySelector(`input[data-i="${i}"][data-type="${type}"]`);
+  if(el) el.value = qty || '';
+}
+
+function onStoreChange(){
+  loadPreviousData(true);
+}
+
+function loadPreviousData(silent){
+  const store = document.getElementById('store').value;
+  const note = document.getElementById('autoFillNote');
+  if(!store){
+    note.style.display='none';
+    if(!silent) showToast('매장을 먼저 선택해주세요');
+    return;
+  }
+  const saved = loadLastCounts(store);
+  if(saved){
+    DENOMS.forEach((d,i)=>{ setQty(i,'morning', saved[i] || 0); });
+    note.style.display='block';
+    if(!silent) showToast('전날 마감 수량을 불러왔습니다');
+  } else {
+    note.style.display='none';
+    if(!silent) showToast('저장된 전날 데이터가 없습니다');
+  }
+  calc();
+}
+
+function loadLastCounts(store){
+  try{
+    const raw = localStorage.getItem(LAST_COUNTS_PREFIX + store);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+function saveLastCounts(store){
+  if(!store) return;
+  const counts = DENOMS.map((d,i)=>{
+    const qty = getQty(i,'morning') + getQty(i,'in') - getQty(i,'out');
+    return Math.max(0, qty);
+  });
+  localStorage.setItem(LAST_COUNTS_PREFIX + store, JSON.stringify(counts));
+}
+
+function calc(){
+  let morning=0, cashIn=0, cashOut=0;
+  DENOMS.forEach((d,i)=>{
+    morning += getQty(i,'morning') * d.value;
+    cashIn += getQty(i,'in') * d.value;
+    cashOut += getQty(i,'out') * d.value;
+  });
+  const cash = morning + cashIn - cashOut;
+  document.getElementById('sumMorning').textContent = fmt(morning)+'원';
+  document.getElementById('sumIn').textContent = fmt(cashIn)+'원';
+  document.getElementById('sumOut').textContent = fmt(cashOut)+'원';
+  document.getElementById('sumCash').textContent = fmt(cash)+'원';
+  document.getElementById('sumCashBig').textContent = fmt(cash)+'원';
+
+  const todayInTotal = parseFloat(document.getElementById('todayInTotal').value) || 0;
+  const matchBox = document.getElementById('matchBox');
+  if(!document.getElementById('todayInTotal').value){
+    matchBox.className = 'match-box';
+    matchBox.textContent = '당일 총입금액을 입력하면 권종별 합계와 비교됩니다';
+  } else if(todayInTotal === cashIn){
+    matchBox.className = 'match-box match-ok';
+    matchBox.textContent = `일치 ✓ (당일 입금 총액과 동일: ${fmt(cashIn)}원)`;
+  } else {
+    matchBox.className = 'match-box match-bad';
+    const diff = todayInTotal - cashIn;
+    matchBox.textContent = `불일치 · 차이 ${fmt(Math.abs(diff))}원 (${diff>0?'입력액이 더 큼':'권종합계가 더 큼'})`;
+  }
+  return {morning, cashIn, cashOut, cash, todayInTotal};
+}
+
+function buildPreviewText(){
+  const store = document.getElementById('store').value;
+  const prevOut = parseFloat(document.getElementById('prevOut').value) || 0;
+  const r = calc();
+  let denomLines = DENOMS.map((d,i)=>{
+    const m=getQty(i,'morning'), inn=getQty(i,'in'), out=getQty(i,'out');
+    if(!m && !inn && !out) return null;
+    return `  ${d.label} : 시재${m} / 입금${inn} / 지출${out}`;
+  }).filter(Boolean).join('\n');
+
+  const matchLine = document.getElementById('todayInTotal').value
+    ? (r.todayInTotal===r.cashIn ? '일치' : `불일치 (차이 ${fmt(Math.abs(r.todayInTotal-r.cashIn))}원)`)
+    : '미입력';
+
+  return `[시재 보고]
+매장: ${store || '(미선택)'}
+일시: ${todayLabel()}
+
+전날 출금 총액: ${fmt(prevOut)}원
+당일 총입금액: ${fmt(r.todayInTotal)}원
+
+아침 시재 총액: ${fmt(r.morning)}원
+당일 입금 총액: ${fmt(r.cashIn)}원
+당일 지출 총액: ${fmt(r.cashOut)}원
+현재 현금 총액: ${fmt(r.cash)}원
+
+입금/지출 비교: ${matchLine}
+${denomLines ? '\n[권종별 내역]\n'+denomLines : ''}`;
+}
+
+function openPreview(){
+  if(!document.getElementById('store').value){
+    showToast('매장을 선택해주세요');
+    return;
+  }
+  document.getElementById('previewText').textContent = buildPreviewText();
+  document.getElementById('previewModal').classList.add('show');
+}
+
+function saveRecord(text){
+  const store = document.getElementById('store').value;
+  const record = {
+    id: Date.now(),
+    store,
+    date: new Date().toISOString(),
+    text
+  };
+  let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  records.unshift(record);
+  const cutoff = Date.now() - 3*24*60*60*1000;
+  records = records.filter(r => new Date(r.date).getTime() >= cutoff);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+
+async function shareReport(){
+  const text = buildPreviewText();
+  saveRecord(text);
+  saveLastCounts(document.getElementById('store').value);
+  closeModal('previewModal');
+  await doShare(text);
+}
+
+async function doShare(text){
+  if(navigator.share){
+    try{
+      await navigator.share({ title:'시재 보고', text });
+    }catch(e){ /* 사용자가 취소한 경우 등 */ }
+  } else {
+    try{
+      await navigator.clipboard.writeText(text);
+      showToast('공유 기능을 지원하지 않아 클립보드에 복사했습니다');
+    }catch(e){
+      showToast('공유를 지원하지 않는 환경입니다');
+    }
+  }
+}
+
+function openRecords(){
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const list = document.getElementById('recordsList');
+  if(records.length===0){
+    list.innerHTML = '<div class="empty-note">최근 3일간 저장된 기록이 없습니다</div>';
+  } else {
+    list.innerHTML = records.map(r=>{
+      const d = new Date(r.date);
+      const dateStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return `<div class="record-item" onclick='showRecordDetail(${r.id})'>
+        <div><div class="r-store">${r.store||'매장 미지정'}</div><div class="r-date">${dateStr}</div></div>
+        <div class="r-arrow">›</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('recordsModal').classList.add('show');
+}
+
+function showRecordDetail(id){
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const r = records.find(x=>x.id===id);
+  if(!r) return;
+  currentRecordForShare = r;
+  document.getElementById('recordDetailTitle').textContent = r.store ? `${r.store} 기록` : '기록 상세';
+  document.getElementById('recordDetailText').textContent = r.text;
+  document.getElementById('recordDetailModal').classList.add('show');
+}
+
+async function reshareRecord(){
+  if(currentRecordForShare){
+    await doShare(currentRecordForShare.text);
+  }
+}
+
+// 관리자 PIN 키패드
+function buildKeypad(){
+  const pad = document.getElementById('pinKeypad');
+  const keys = ['1','2','3','4','5','6','7','8','9','지움','0','확인'];
+  pad.innerHTML = keys.map(k=>`<button onclick="pinPress('${k}')">${k}</button>`).join('');
+}
+function pinPress(k){
+  if(k==='지움'){ pinBuffer=''; }
+  else if(k==='확인'){
+    if(pinBuffer === ADMIN_PIN){
+      closeModal('adminGateModal');
+      pinBuffer='';
+      openAdmin();
+    } else {
+      document.getElementById('pinStatus').textContent = '비밀번호가 올바르지 않습니다';
+      pinBuffer='';
+    }
+    return;
+  } else {
+    pinBuffer += k;
+  }
+  document.getElementById('pinStatus').textContent = pinBuffer ? ' ' : '비밀번호를 입력하세요';
+}
+function openAdminGate(){
+  pinBuffer='';
+  buildKeypad();
+  document.getElementById('pinStatus').textContent = '비밀번호를 입력하세요';
+  document.getElementById('adminGateModal').classList.add('show');
+}
+function openAdmin(){
+  const records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const list = document.getElementById('adminRecordsList');
+  if(records.length===0){
+    list.innerHTML = '<div class="empty-note">저장된 기록이 없습니다</div>';
+  } else {
+    list.innerHTML = records.map(r=>{
+      const d = new Date(r.date);
+      const dateStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return `<div class="record-item" onclick='showRecordDetail(${r.id})'>
+        <div><div class="r-store">${r.store||'매장 미지정'}</div><div class="r-date">${dateStr}</div></div>
+        <div class="r-arrow">›</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('adminModal').classList.add('show');
+}
+function clearAllRecords(){
+  if(confirm('모든 저장 기록을 삭제할까요?')){
+    localStorage.removeItem(STORAGE_KEY);
+    openAdmin();
+    showToast('전체 기록이 삭제되었습니다');
+  }
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display='block';
+  setTimeout(()=>{ t.style.display='none'; }, 2200);
+}
+
+document.getElementById('prevOut').addEventListener('input', calc);
+document.getElementById('todayInTotal').addEventListener('input', calc);
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.update();
+      reg.addEventListener('updatefound', ()=>{
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener('statechange', ()=>{
+          if(nw.state==='activated'){ window.location.reload(); }
+        });
+      });
+    }).catch(()=>{});
+  });
+}
+
+document.getElementById('todayLabel').textContent = todayLabel();
+buildDenomTable();
+calc();
+
+// 오버레이 바깥 클릭 시 닫기
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
+});
+</script>
+</body>
+</html>
